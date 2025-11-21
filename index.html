@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Glitchy Horizontal Neon Counter</title>
+
+<style>
+body {
+    background: #0b0f14;
+    color: #9effd6;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    text-align: center;
+    padding: 40px;
+}
+
+h1 {
+    font-weight: 300;
+    color: #8affc9;
+    text-shadow: 0 0 10px #19ff93;
+}
+
+.counter-area {
+    margin-top: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px; /* spacing between currency and digits */
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.currency {
+    font-size: 44px;
+    font-weight: 600;
+    margin-right: 12px;
+    color: #7bffd1;
+    text-shadow: 0 0 12px #00ffb3;
+}
+
+.digits-container {
+    display: flex;
+    gap: 6px; /* spacing between digits */
+    flex-direction: row;
+    flex-wrap: nowrap; /* horizontal line */
+}
+
+.digit {
+    width: 40px;
+    height: 70px;
+    position: relative;
+    display: inline-block;
+}
+
+.seg {
+    position: absolute;
+    background: #1e2a32;
+    transition: background 0.05s, box-shadow 0.05s, transform 0.05s;
+    border-radius: 8px;
+}
+
+.on {
+    background: #00ff9e;
+    box-shadow: 0 0 15px #00ff9e, 0 0 30px #00ff9e;
+    transform: scale(1.2) rotate(0deg);
+}
+
+/* Segment placement */
+.a { top: 0; left: 8px; width: 24px; height: 8px; }
+.b { top: 8px; right: 0; width: 8px; height: 24px; }
+.c { bottom: 8px; right: 0; width: 8px; height: 24px; }
+.d { bottom: 0; left: 8px; width: 24px; height: 8px; }
+.e { bottom: 8px; left: 0; width: 8px; height: 24px; }
+.f { top: 8px; left: 0; width: 8px; height: 24px; }
+.g { top: 31px; left: 8px; width: 24px; height: 8px; }
+</style>
+</head>
+
+<body>
+<h1>CYBER HUD</h1>
+
+<div class="counter-area">
+    <div class="currency">€</div>
+    <div class="digits-container" id="digits"></div>
+</div>
+
+<script>
+const digitsDiv = document.getElementById("digits");
+const MAX_DIGITS = 16; // how many digits in the horizontal line
+const SEGMENTS = ["a","b","c","d","e","f","g"];
+
+// Create static digits
+for (let i = 0; i < MAX_DIGITS; i++) {
+    const d = document.createElement("div");
+    d.className = "digit";
+    SEGMENTS.forEach(s => {
+        const seg = document.createElement("div");
+        seg.className = "seg " + s;
+        d.appendChild(seg);
+    });
+    digitsDiv.appendChild(d);
+}
+
+// Random glitch generator
+function randomDigitSegments() {
+    let active = [];
+    SEGMENTS.forEach(seg => {
+        if (Math.random() > 0.5) active.push(seg);
+    });
+    return active;
+}
+
+function glitchTick() {
+    for (let i = 0; i < MAX_DIGITS; i++) {
+        const digitEl = digitsDiv.children[i];
+        const segs = randomDigitSegments();
+        for (const seg of digitEl.children) {
+            seg.classList.remove("on");
+        }
+        segs.forEach(s => {
+            digitEl.querySelector("." + s).classList.add("on");
+        });
+
+        // Random rotation & horizontal flicker
+        if (Math.random() > 0.8) {
+            const rot = Math.random() * 15 - 7.5;
+            const shift = Math.random() * 4 - 2;
+            digitEl.style.transform = `rotate(${rot}deg) translateX(${shift}px) scale(1.1)`;
+        } else {
+            digitEl.style.transform = "rotate(0deg) translateX(0px) scale(1)";
+        }
+    }
+
+    requestAnimationFrame(glitchTick);
+}
+
+glitchTick();
+</script>
+</body>
+</html>
