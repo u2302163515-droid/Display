@@ -14,7 +14,6 @@ body, html {
 }
 canvas { display:block; }
 
-/* --- Game UI --- */
 #ui {
     position:absolute;
     top:20px;
@@ -63,7 +62,6 @@ input[type="text"]{
     margin-top:10px;
 }
 
-/* --- Responsive UI --- */
 @media (max-width:600px){
     #status { font-size:24px; }
     button { font-size:18px; padding:8px 20px; }
@@ -106,6 +104,8 @@ canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 // ----------------------
 let starList=[];
 let rotX=0, rotY=0;
+let scaleFactor=500; // initial zoom
+
 const totalStars=10;
 const radius=0.5, heightStep=0.3;
 
@@ -151,9 +151,9 @@ for(let i=0;i<totalStars-1;i++){
 // ----------------------
 function rotateXVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); return [x, y*c - z*s, y*s + z*c]; }
 function rotateYVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); return [x*c + z*s, y, -x*s + z*c]; }
-function project([x,y,z]){ const scale=500; return [canvas.width/2 + x*scale, canvas.height/2 - y*scale]; }
+function project([x,y,z]){ return [canvas.width/2 + x*scaleFactor, canvas.height/2 - y*scaleFactor]; }
 
-// Draw star as a tetra-like star shape
+// Draw star as tetra-like shape
 function drawStar(s){
     const transformed=s.vertices.map(v=>{
         let vx=v[0]+s.x, vy=v[1]+s.y, vz=v[2]+s.z;
@@ -279,6 +279,35 @@ document.getElementById('toggleLeaderboardBtn').addEventListener('click', ()=>{
     lbDiv.style.display=lbVisible ? "flex" : "none";
     document.getElementById('toggleLeaderboardBtn').innerText=lbVisible ? "Hide Leaderboard" : "Show Leaderboard";
 });
+
+// ----------------------
+// Zoom controls
+// ----------------------
+canvas.addEventListener('wheel', e=>{
+    e.preventDefault();
+    scaleFactor *= e.deltaY < 0 ? 1.1 : 0.9;
+    if(scaleFactor<100) scaleFactor=100;
+    if(scaleFactor>2000) scaleFactor=2000;
+});
+
+// Pinch zoom for touch
+let lastDistance = null;
+canvas.addEventListener('touchmove', e=>{
+    if(e.touches.length===2){
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx*dx + dy*dy);
+        if(lastDistance!=null){
+            const zoom = distance / lastDistance;
+            scaleFactor *= zoom;
+            if(scaleFactor<100) scaleFactor=100;
+            if(scaleFactor>2000) scaleFactor=2000;
+        }
+        lastDistance = distance;
+    }
+});
+canvas.addEventListener('touchend', e=>{ if(e.touches.length<2) lastDistance=null; });
 
 // Responsive canvas
 window.addEventListener('resize', ()=>{canvas.width=window.innerWidth; canvas.height=window.innerHeight;});
