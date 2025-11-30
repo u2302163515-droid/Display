@@ -2,19 +2,74 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Polyhydra Vortex Puzzle</title>
+<title>Polyhydra Vortex Puzzle Game</title>
 <style>
-body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#111; font-family:sans-serif; touch-action:none; }
+body, html {
+    margin:0; padding:0;
+    width:100%; height:100%;
+    overflow:hidden; background:#111; font-family:'Arial Black', sans-serif; touch-action:none;
+}
 canvas { display:block; }
-#ui { position:absolute; top:10px; left:10px; color:#fff; z-index:10; font-size:16px; }
-button { margin:5px; padding:10px; border-radius:8px; border:none; cursor:pointer; background:#333; color:#fff; }
-button:hover{ background:#555; }
+
+/* --- Game UI --- */
+#ui {
+    position:absolute;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    z-index:10;
+    color:#fff;
+}
+#status {
+    font-size:36px;
+    margin-bottom:20px;
+    text-align:center;
+    color:#0f0;
+    text-shadow: 2px 2px 10px #000;
+}
+button {
+    font-size:28px;
+    padding:15px 40px;
+    margin:10px;
+    border:none;
+    border-radius:15px;
+    cursor:pointer;
+    background: linear-gradient(#222,#555);
+    color:#fff;
+    text-shadow: 1px 1px 2px #000;
+    transition:0.2s;
+}
+button:hover {
+    background: linear-gradient(#555,#222);
+}
+#leaderboard {
+    margin-top:20px;
+    font-size:24px;
+    color:#ff0;
+    text-align:center;
+}
+input[type="text"]{
+    font-size:24px;
+    padding:5px 10px;
+    border-radius:10px;
+    border:none;
+    margin-top:10px;
+}
 </style>
 </head>
 <body>
 <div id="ui">
-  <span id="status">Select Begin tetrahedron</span>
-  <button onclick="resetPuzzle()">Reset</button>
+    <div id="status">Select Begin Tetrahedron</div>
+    <button id="resetBtn">Restart Game</button>
+    <div id="leaderboard">
+        <div>🏆 Leaderboard 🏆</div>
+        <div id="entries">No submissions yet</div>
+        <input type="text" id="playerName" placeholder="Your Name"/>
+        <button id="submitBtn">Submit Score</button>
+    </div>
 </div>
 <canvas id="canvas"></canvas>
 <script>
@@ -22,6 +77,9 @@ const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 
+// ----------------------
+// Polyhydra Vortex Setup
+// ----------------------
 let tetraList=[];
 let rotX=0, rotY=0;
 const totalTetra=10;
@@ -32,6 +90,10 @@ let beginTetra=null;
 let endTetra=null;
 let currentTetra=null;
 let visited=[];
+let moveCount=0;
+
+// Leaderboard (front-end only)
+let leaderboard=[];
 
 // Create vortex tetrahedra
 for(let i=0;i<totalTetra;i++){
@@ -50,11 +112,11 @@ for(let i=0;i<totalTetra;i++){
             [-0.05,0.05,-0.05],
             [-0.05,-0.05,-0.05]
         ],
-        neighbors:[], // will define graph edges
+        neighbors:[],
     });
 }
 
-// Connect tetra sequentially for puzzle graph
+// Connect tetra sequentially
 for(let i=0;i<totalTetra-1;i++){
     tetraList[i].neighbors.push(tetraList[i+1].id);
     tetraList[i+1].neighbors.push(tetraList[i].id);
@@ -67,7 +129,7 @@ function rotateXVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); r
 function rotateYVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); return [x*c + z*s, y, -x*s + z*c]; }
 function project([x,y,z]){ const scale=500; return [canvas.width/2 + x*scale, canvas.height/2 - y*scale]; }
 
-// Draw tetra with puzzle highlights
+// Draw tetra with highlights
 function drawTetra(t){
     const transformed=t.vertices.map(v=>{
         let vx=v[0]+t.x, vy=v[1]+t.y, vz=v[2]+t.z;
@@ -90,7 +152,7 @@ function drawTetra(t){
     }
 }
 
-// Find tetra under mouse
+// Pick tetrahedron under pointer
 function pickTetra(x,y){
     for(const t of tetraList){
         const tx=project(rotateYVec(rotateXVec([t.x,t.y,t.z], rotX), rotY));
@@ -110,17 +172,11 @@ function draw(){
 draw();
 
 // ----------------------
-// Touch/Mouse Rotation
+// Rotation controls
 // ----------------------
 let isDragging=false, lastX=0, lastY=0;
 canvas.addEventListener('mousedown', e=>{ isDragging=true; lastX=e.clientX; lastY=e.clientY; });
-canvas.addEventListener('mousemove', e=>{
-    if(isDragging){
-        let dx=e.clientX-lastX, dy=e.clientY-lastY;
-        rotY+=dx*0.01; rotX+=dy*0.01;
-        lastX=e.clientX; lastY=e.clientY;
-    }
-});
+canvas.addEventListener('mousemove', e=>{ if(isDragging){ let dx=e.clientX-lastX, dy=e.clientY-lastY; rotY+=dx*0.01; rotX+=dy*0.01; lastX=e.clientX; lastY=e.clientY; }});
 canvas.addEventListener('mouseup', e=>isDragging=false);
 canvas.addEventListener('mouseleave', e=>isDragging=false);
 
@@ -129,7 +185,7 @@ canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(isDragging){ le
 canvas.addEventListener('touchend', e=>isDragging=false);
 
 // ----------------------
-// Puzzle Click / Touch
+// Puzzle Click
 // ----------------------
 canvas.addEventListener('click', e=>{
     const t=pickTetra(e.clientX,e.clientY);
@@ -138,13 +194,15 @@ canvas.addEventListener('click', e=>{
         beginTetra=t;
         currentTetra=t;
         endTetra=tetraList[tetraList.length-1];
-        document.getElementById('status').innerText="Navigate to End (magenta)";
         visited.push(t.id);
+        moveCount=0;
+        document.getElementById('status').innerText="Navigate to Magenta End!";
     } else if(currentTetra.neighbors.includes(t.id) && !visited.includes(t.id)){
         currentTetra=t;
         visited.push(t.id);
+        moveCount++;
         if(currentTetra===endTetra){
-            document.getElementById('status').innerText="Puzzle Complete! 🎉";
+            document.getElementById('status').innerText=`🎉 Puzzle Complete in ${moveCount} moves! Enter Name to Submit`;
         }
     }
 });
@@ -157,12 +215,26 @@ function resetPuzzle(){
     endTetra=null;
     currentTetra=null;
     visited=[];
-    document.getElementById('status').innerText="Select Begin tetrahedron";
+    moveCount=0;
+    document.getElementById('status').innerText="Select Begin Tetrahedron";
 }
 
 // ----------------------
-// Responsive Canvas
+// Leaderboard
 // ----------------------
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+    const name=document.getElementById('playerName').value || "Anonymous";
+    if(currentTetra!==endTetra) return;
+    leaderboard.push({name:name,moves:moveCount});
+    leaderboard.sort((a,b)=>a.moves-b.moves);
+    const entries=document.getElementById('entries');
+    entries.innerHTML=leaderboard.slice(0,5).map((e,i)=>`${i+1}. ${e.name} - ${e.moves} moves`).join('<br>') || "No submissions yet";
+    document.getElementById('playerName').value="";
+});
+
+document.getElementById('resetBtn').addEventListener('click', resetPuzzle);
+
+// Responsive canvas
 window.addEventListener('resize', ()=>{canvas.width=window.innerWidth; canvas.height=window.innerHeight;});
 </script>
 </body>
