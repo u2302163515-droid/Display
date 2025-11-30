@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Polyhydra Vortex Star Puzzle</title>
+<title>Arcade Star Vortex Puzzle</title>
 <style>
 body, html {
     margin:0; padding:0;
     width:100%; height:100%;
     overflow:hidden;
-    background:#111;
+    background:#000;
     font-family:'Arial Black', sans-serif;
     touch-action:none;
 }
@@ -30,8 +30,8 @@ canvas { display:block; }
     font-size:36px;
     margin-bottom:20px;
     text-align:center;
-    color:#0f0;
-    text-shadow:2px 2px 10px #000;
+    color:#0ff;
+    text-shadow:2px 2px 10px #0ff;
 }
 button {
     font-size:28px;
@@ -40,42 +40,24 @@ button {
     border:none;
     border-radius:15px;
     cursor:pointer;
-    background: linear-gradient(#222,#555);
-    color:#fff;
-    text-shadow:1px 1px 2px #000;
+    background: linear-gradient(#0ff,#0aa);
+    color:#000;
+    text-shadow:1px 1px 2px #0ff;
     transition:0.2s;
 }
-button:hover { background: linear-gradient(#555,#222); }
-
-#leaderboard {
-    margin-top:20px;
-    font-size:24px;
-    color:#ff0;
-    text-align:center;
-    display:none;
-}
-input[type="text"]{
-    font-size:20px;
-    padding:5px 10px;
-    border-radius:10px;
-    border:none;
-    margin-top:10px;
-}
+button:hover { background: linear-gradient(#0aa,#0ff); }
 
 @media (max-width:600px){
     #status { font-size:24px; }
     button { font-size:18px; padding:8px 20px; }
-    #leaderboard { font-size:18px; }
 }
 @media (min-width:601px) and (max-width:1200px){
     #status { font-size:32px; }
     button { font-size:24px; padding:10px 25px; }
-    #leaderboard { font-size:20px; }
 }
 @media (min-width:1201px){
     #status { font-size:40px; }
     button { font-size:28px; padding:12px 30px; }
-    #leaderboard { font-size:24px; }
 }
 </style>
 </head>
@@ -84,13 +66,6 @@ input[type="text"]{
     <div id="status">Select Begin Star</div>
     <div>
         <button id="resetBtn">Restart Game</button>
-        <button id="toggleLeaderboardBtn">Show Leaderboard</button>
-    </div>
-    <div id="leaderboard">
-        <div>🌟 Leaderboard 🌟</div>
-        <div id="entries">No submissions yet</div>
-        <input type="text" id="playerName" placeholder="Your Name"/>
-        <button id="submitBtn">Submit Score</button>
     </div>
 </div>
 <canvas id="canvas"></canvas>
@@ -104,7 +79,7 @@ canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 // ----------------------
 let starList=[];
 let rotX=0, rotY=0;
-let scaleFactor=500; // initial zoom
+let scaleFactor=500; // zoom
 
 const totalStars=10;
 const radius=0.5, heightStep=0.3;
@@ -116,8 +91,14 @@ let currentStar=null;
 let visited=[];
 let moveCount=0;
 
-// Leaderboard (persistent)
-let leaderboard=JSON.parse(localStorage.getItem('vortexLeaderboard')) || [];
+// Arcade colors
+const colors={
+    human:"#ff0", // yellow
+    ai:"#0ff",    // cyan
+    begin:"#f0f", // magenta
+    end:"#ff5500", // orange
+    visited:"#0f0" // neon green
+};
 
 // Create star vortex
 for(let i=0;i<totalStars;i++){
@@ -136,7 +117,7 @@ for(let i=0;i<totalStars;i++){
             [-0.05,-0.05,-0.05]
         ],
         neighbors:[],
-        type:i%2===0?"Human":"AI"
+        type:i%2===0?"human":"ai"
     });
 }
 
@@ -153,17 +134,16 @@ function rotateXVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); r
 function rotateYVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); return [x*c + z*s, y, -x*s + z*c]; }
 function project([x,y,z]){ return [canvas.width/2 + x*scaleFactor, canvas.height/2 - y*scaleFactor]; }
 
-// Draw star as tetra-like shape
+// Draw star
 function drawStar(s){
     const transformed=s.vertices.map(v=>{
         let vx=v[0]+s.x, vy=v[1]+s.y, vz=v[2]+s.z;
         return rotateYVec(rotateXVec([vx,vy,vz], rotX), rotY);
     });
-    let color="#555";
-    if(s===beginStar) color="#0f0";
-    else if(s===endStar) color="#f0f";
-    else if(visited.includes(s.id)) color="#ff0";
-    else color=s.type==="Human"?"#0a0":"#00a";
+    let color = colors[s.type];
+    if(s===beginStar) color=colors.begin;
+    else if(s===endStar) color=colors.end;
+    else if(visited.includes(s.id)) color=colors.visited;
 
     for(const [i,j] of s.edges){
         const [x1,y1]=project(transformed[i]);
@@ -175,14 +155,13 @@ function drawStar(s){
         ctx.lineTo(x2,y2);
         ctx.stroke();
     }
-    // Draw star symbol
     const [cx,cy]=project([s.x,s.y,s.z]);
     ctx.fillStyle=color;
     ctx.font="24px Arial Black";
     ctx.fillText("★", cx-12, cy+8);
 }
 
-// Pick star under pointer
+// Pick star
 function pickStar(x,y){
     for(const s of starList){
         const [sx,sy]=project(rotateYVec(rotateXVec([s.x,s.y,s.z], rotX), rotY));
@@ -194,7 +173,7 @@ function pickStar(x,y){
 
 // Animation loop
 function draw(){
-    ctx.fillStyle="#111";
+    ctx.fillStyle="#000";
     ctx.fillRect(0,0,canvas.width,canvas.height);
     starList.forEach(s=>drawStar(s));
     requestAnimationFrame(draw);
@@ -231,7 +210,7 @@ canvas.addEventListener('click', e=>{
         visited.push(s.id);
         moveCount++;
         if(currentStar===endStar){
-            document.getElementById('status').innerText=`🎉 Puzzle Complete in ${moveCount} moves! Enter Name to Submit`;
+            document.getElementById('status').innerText=`🎉 Puzzle Complete in ${moveCount} moves!`;
         }
     }
 });
@@ -239,45 +218,13 @@ canvas.addEventListener('click', e=>{
 // ----------------------
 // Reset
 // ----------------------
-function resetPuzzle(){
+document.getElementById('resetBtn').addEventListener('click', ()=>{
     beginStar=null;
     endStar=null;
     currentStar=null;
     visited=[];
     moveCount=0;
     document.getElementById('status').innerText="Select Begin Star";
-}
-
-// ----------------------
-// Leaderboard
-// ----------------------
-function updateLeaderboardUI(){
-    const entries=document.getElementById('entries');
-    entries.innerHTML=leaderboard.slice(0,5).map((e,i)=>`${i+1}. ${e.name} - ${e.moves} moves`).join('<br>') || "No submissions yet";
-}
-updateLeaderboardUI();
-
-document.getElementById('submitBtn').addEventListener('click', ()=>{
-    const name=document.getElementById('playerName').value || "Anonymous";
-    if(currentStar!==endStar) return;
-    leaderboard.push({name:name,moves:moveCount});
-    leaderboard.sort((a,b)=>a.moves-b.moves);
-    localStorage.setItem('vortexLeaderboard', JSON.stringify(leaderboard));
-    updateLeaderboardUI();
-    document.getElementById('playerName').value="";
-});
-
-document.getElementById('resetBtn').addEventListener('click', resetPuzzle);
-
-// ----------------------
-// Toggle Leaderboard
-// ----------------------
-const lbDiv=document.getElementById('leaderboard');
-let lbVisible=false;
-document.getElementById('toggleLeaderboardBtn').addEventListener('click', ()=>{
-    lbVisible=!lbVisible;
-    lbDiv.style.display=lbVisible ? "flex" : "none";
-    document.getElementById('toggleLeaderboardBtn').innerText=lbVisible ? "Hide Leaderboard" : "Show Leaderboard";
 });
 
 // ----------------------
@@ -290,14 +237,13 @@ canvas.addEventListener('wheel', e=>{
     if(scaleFactor>2000) scaleFactor=2000;
 });
 
-// Pinch zoom for touch
-let lastDistance = null;
+let lastDistance=null;
 canvas.addEventListener('touchmove', e=>{
     if(e.touches.length===2){
         e.preventDefault();
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const distance = Math.sqrt(dx*dx + dy*dy);
+        const dx=e.touches[0].clientX - e.touches[1].clientX;
+        const dy=e.touches[0].clientY - e.touches[1].clientY;
+        const distance=Math.sqrt(dx*dx + dy*dy);
         if(lastDistance!=null){
             const zoom = distance / lastDistance;
             scaleFactor *= zoom;
@@ -309,7 +255,6 @@ canvas.addEventListener('touchmove', e=>{
 });
 canvas.addEventListener('touchend', e=>{ if(e.touches.length<2) lastDistance=null; });
 
-// Responsive canvas
 window.addEventListener('resize', ()=>{canvas.width=window.innerWidth; canvas.height=window.innerHeight;});
 </script>
 </body>
