@@ -68,6 +68,74 @@ button:hover { background: linear-gradient(#0aa,#0ff); }
         <button id="resetBtn">Restart Game</button>
     </div>
 </div>
+    <!-- Cheat Sheet Toggle Button -->
+<button id="toggleCheatBtn" style="
+    position:absolute;
+    bottom:20px;
+    left:20px;
+    background:linear-gradient(#0ff,#00a);
+    color:#000;
+    font-size:18px;
+    padding:10px 20px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    z-index:10;
+    text-shadow:1px 1px 2px #0ff;
+    transition:0.3s;
+">Show Cheat Sheet</button>
+
+<!-- Cheat Sheet Overlay -->
+<div id="cheatsheet" style="
+    position:absolute;
+    bottom:60px;
+    left:20px;
+    background:rgba(0,0,0,0.7);
+    padding:20px;
+    border-radius:15px;
+    font-family:'Arial Black', sans-serif;
+    color:#fff;
+    text-align:left;
+    z-index:10;
+    max-width:220px;
+    display:none;
+    box-shadow:0 0 20px #0ff;
+    animation:fadeIn 0.3s ease-in-out;
+">
+    <h3 style="color:#0ff; text-align:center; text-shadow: 0 0 5px #0ff;">⭐ Cheat Sheet ⭐</h3>
+    <p><span style="color:#f0f;">★</span> Begin Star</p>
+    <p><span style="color:#ff5500;">★</span> End Star</p>
+    <p><span style="color:#ff0;">★</span> Human Star</p>
+    <p><span style="color:#0ff;">★</span> AI Star</p>
+    <p><span style="color:#0f0;">★</span> Visited Star</p>
+    <hr style="border:1px solid #0ff;">
+    <p><strong>Controls:</strong></p>
+    <p>Drag / Touch → Rotate Vortex</p>
+    <p>Mouse Wheel / Pinch → Zoom In/Out</p>
+    <p>Click / Tap → Select Star</p>
+    <p>Restart Game → Press Button</p>
+</div>
+
+<style>
+@keyframes fadeIn {
+    from {opacity:0;}
+    to {opacity:1;}
+}
+</style>
+
+<script>
+// Toggle cheat sheet visibility
+const cheatBtn = document.getElementById('toggleCheatBtn');
+const cheatDiv = document.getElementById('cheatsheet');
+let cheatVisible = false;
+
+cheatBtn.addEventListener('click', () => {
+    cheatVisible = !cheatVisible;
+    cheatDiv.style.display = cheatVisible ? 'block' : 'none';
+    cheatBtn.innerText = cheatVisible ? 'Hide Cheat Sheet' : 'Show Cheat Sheet';
+});
+</script>
+
 <canvas id="canvas"></canvas>
 <script>
 const canvas=document.getElementById('canvas');
