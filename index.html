@@ -1,63 +1,17 @@
-<!DOCTYPE html>
+</<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Polyhydra Vortex Puzzle Game</title>
 <style>
-body, html {
-    margin:0; padding:0;
-    width:100%; height:100%;
-    overflow:hidden; background:#111; font-family:'Arial Black', sans-serif; touch-action:none;
-}
+body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#111; font-family:'Arial Black', sans-serif; touch-action:none; }
 canvas { display:block; }
-
-/* --- Game UI --- */
-#ui {
-    position:absolute;
-    top:20px;
-    left:50%;
-    transform:translateX(-50%);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    z-index:10;
-    color:#fff;
-}
-#status {
-    font-size:36px;
-    margin-bottom:20px;
-    text-align:center;
-    color:#0f0;
-    text-shadow: 2px 2px 10px #000;
-}
-button {
-    font-size:28px;
-    padding:15px 40px;
-    margin:10px;
-    border:none;
-    border-radius:15px;
-    cursor:pointer;
-    background: linear-gradient(#222,#555);
-    color:#fff;
-    text-shadow: 1px 1px 2px #000;
-    transition:0.2s;
-}
-button:hover {
-    background: linear-gradient(#555,#222);
-}
-#leaderboard {
-    margin-top:20px;
-    font-size:24px;
-    color:#ff0;
-    text-align:center;
-}
-input[type="text"]{
-    font-size:24px;
-    padding:5px 10px;
-    border-radius:10px;
-    border:none;
-    margin-top:10px;
-}
+#ui { position:absolute; top:20px; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; z-index:10; color:#fff; }
+#status { font-size:36px; margin-bottom:20px; text-align:center; color:#0f0; text-shadow:2px 2px 10px #000; }
+button { font-size:28px; padding:15px 40px; margin:10px; border:none; border-radius:15px; cursor:pointer; background: linear-gradient(#222,#555); color:#fff; text-shadow:1px 1px 2px #000; transition:0.2s; }
+button:hover { background: linear-gradient(#555,#222); }
+#leaderboard { margin-top:20px; font-size:24px; color:#ff0; text-align:center; }
+input[type="text"]{ font-size:24px; padding:5px 10px; border-radius:10px; border:none; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -92,8 +46,8 @@ let currentTetra=null;
 let visited=[];
 let moveCount=0;
 
-// Leaderboard (front-end only)
-let leaderboard=[];
+// Leaderboard (persistent)
+let leaderboard=JSON.parse(localStorage.getItem('vortexLeaderboard')) || [];
 
 // Create vortex tetrahedra
 for(let i=0;i<totalTetra;i++){
@@ -222,13 +176,19 @@ function resetPuzzle(){
 // ----------------------
 // Leaderboard
 // ----------------------
+function updateLeaderboardUI(){
+    const entries=document.getElementById('entries');
+    entries.innerHTML=leaderboard.slice(0,5).map((e,i)=>`${i+1}. ${e.name} - ${e.moves} moves`).join('<br>') || "No submissions yet";
+}
+updateLeaderboardUI();
+
 document.getElementById('submitBtn').addEventListener('click', ()=>{
     const name=document.getElementById('playerName').value || "Anonymous";
     if(currentTetra!==endTetra) return;
     leaderboard.push({name:name,moves:moveCount});
     leaderboard.sort((a,b)=>a.moves-b.moves);
-    const entries=document.getElementById('entries');
-    entries.innerHTML=leaderboard.slice(0,5).map((e,i)=>`${i+1}. ${e.name} - ${e.moves} moves`).join('<br>') || "No submissions yet";
+    localStorage.setItem('vortexLeaderboard', JSON.stringify(leaderboard));
+    updateLeaderboardUI();
     document.getElementById('playerName').value="";
 });
 
