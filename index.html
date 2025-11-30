@@ -1,65 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Glitchy Horizontal Neon Counter</title>
-
-<style>
-body {
-    background: #0b0f14;
-    color: #9effd6;
-    font-family: 'Segoe UI', Tahoma, sans-serif;
-    text-align: center;
-    padding: 40px;
-}
-
-h1 {
-    font-weight: 300;
-    color: #8affc9;
-    text-shadow: 0 0 10px #19ff93;
-}
-
-.counter-area {
-    margin-top: 45px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px; /* spacing between currency and digits */
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-.currency {
-    font-size: 44px;
-    font-weight: 600;
-    margin-right: 12px;
-    color: #7bffd1;
-    text-shadow: 0 0 12px #00ffb3;
-}
-
-.digits-container {
-    display: flex;
-    gap: 6px; /* spacing between digits */
-    flex-direction: row;
-    flex-wrap: nowrap; /* horizontal line */
-}
-
-.digit {
-    width: 40px;
-    height: 70px;
-    position: relative;
-    display: inline-block;
-}
-
-.seg {
-    position: absolute;
-    background: #1e2a32;
-    transition: background 0.05s, box-shadow 0.05s, transform 0.05s;
-    border-radius: 8px;
-}
-
-.on {
-    background: #00ff9e;
+00ff9e;
     box-shadow: 0 0 15px #00ff9e, 0 0 30px #00ff9e;
     transform: scale(1.2) rotate(0deg);
 }
@@ -135,5 +74,3 @@ function glitchTick() {
 
 glitchTick();
 </script>
-</body>
-</html>
