@@ -1,76 +1,204 @@
-00ff9e;
-    box-shadow: 0 0 15px #00ff9e, 0 0 30px #00ff9e;
-    transform: scale(1.2) rotate(0deg);
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Interactive 3D Polyhydra</title>
+<style>
+  /* --- Global Styles --- */
+  body, html {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg,#111,#222);
+    overflow: hidden;
+    user-select: none;
+  }
 
-/* Segment placement */
-.a { top: 0; left: 8px; width: 24px; height: 8px; }
-.b { top: 8px; right: 0; width: 8px; height: 24px; }
-.c { bottom: 8px; right: 0; width: 8px; height: 24px; }
-.d { bottom: 0; left: 8px; width: 24px; height: 8px; }
-.e { bottom: 8px; left: 0; width: 8px; height: 24px; }
-.f { top: 8px; left: 0; width: 8px; height: 24px; }
-.g { top: 31px; left: 8px; width: 24px; height: 8px; }
+  /* --- UI Panel --- */
+  #ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    z-index: 10;
+  }
+  button {
+    padding: 10px 15px;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #333;
+    color: #fff;
+    transition: 0.2s;
+  }
+  button:hover {
+    background: #555;
+  }
+  #euler {
+    margin-top: 5px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  /* --- Canvas --- */
+  canvas {
+    display: block;
+  }
 </style>
 </head>
-
 <body>
-<h1>CYBER HUD</h1>
 
-<div class="counter-area">
-    <div class="currency">€</div>
-    <div class="digits-container" id="digits"></div>
+<div id="ui">
+  <button onclick="addTetra()">Add Tetra (Human)</button>
+  <button onclick="aiBranch()">AI Branch</button>
+  <button onclick="spinRuntime()">Spin Runtime</button>
+  <button onclick="addLoop()">Add Loop</button>
+  <div id="euler">Euler χ: 2</div>
 </div>
 
+<canvas id="canvas"></canvas>
+
 <script>
-const digitsDiv = document.getElementById("digits");
-const MAX_DIGITS = 16; // how many digits in the horizontal line
-const SEGMENTS = ["a","b","c","d","e","f","g"];
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-// Create static digits
-for (let i = 0; i < MAX_DIGITS; i++) {
-    const d = document.createElement("div");
-    d.className = "digit";
-    SEGMENTS.forEach(s => {
-        const seg = document.createElement("div");
-        seg.className = "seg " + s;
-        d.appendChild(seg);
-    });
-    digitsDiv.appendChild(d);
+// ----------------------
+// Polyhydra Model
+// ----------------------
+let poly = [];
+let euler = 2;
+
+// Rotation angles
+let rotX = 0;
+let rotY = 0;
+let spinSpeed = 0.01;
+
+// Drag control
+let isDragging = false;
+let lastX = 0;
+let lastY = 0;
+
+// ----------------------
+// Create Tetrahedron
+// ----------------------
+function createTetrahedron(source="Human") {
+    const s = 0.2; 
+    return {
+        id: poly.length+1,
+        source: source,
+        vertices: [
+            [0, 0, Math.sqrt(6)/3*s],
+            [s/Math.sqrt(3), -s/3, -Math.sqrt(6)/12*s],
+            [-s/2/Math.sqrt(3), s/2, -Math.sqrt(6)/12*s],
+            [-s/2/Math.sqrt(3), -s/6-s/4, -Math.sqrt(6)/12*s]
+        ].map(v => v.map(coord => coord + Math.random()*0.5 - 0.25)),
+        edges: [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
+    };
 }
 
-// Random glitch generator
-function randomDigitSegments() {
-    let active = [];
-    SEGMENTS.forEach(seg => {
-        if (Math.random() > 0.5) active.push(seg);
-    });
-    return active;
+// ----------------------
+// Control Functions
+// ----------------------
+function addTetra() { poly.push(createTetrahedron("Human")); updateEuler(); }
+function aiBranch() { poly.push(createTetrahedron("AI")); updateEuler(); }
+function spinRuntime() { spinSpeed += 0.02; }
+
+// Add loop (connect two random tetrahedra)
+function addLoop() {
+    if(poly.length < 2) return;
+    const t1 = poly[Math.floor(Math.random()*poly.length)];
+    let t2;
+    do { t2 = poly[Math.floor(Math.random()*poly.length)]; } while(t1===t2);
+    t1.edges.push([0, t2.vertices.length?0:0]);
+    updateEuler();
 }
 
-function glitchTick() {
-    for (let i = 0; i < MAX_DIGITS; i++) {
-        const digitEl = digitsDiv.children[i];
-        const segs = randomDigitSegments();
-        for (const seg of digitEl.children) {
-            seg.classList.remove("on");
-        }
-        segs.forEach(s => {
-            digitEl.querySelector("." + s).classList.add("on");
-        });
+// ----------------------
+// Euler Characteristic
+// ----------------------
+function updateEuler() {
+    const V = poly.length*4;
+    const E = poly.reduce((sum,t)=>sum+t.edges.length,0);
+    const F = poly.length*4;
+    euler = F + V - E;
+    const eulerEl = document.getElementById('euler');
+    eulerEl.innerText = "Euler χ: "+euler;
+    eulerEl.style.color = euler>2?"#0f0":euler<2?"#f33":"#fff";
+}
 
-        // Random rotation & horizontal flicker
-        if (Math.random() > 0.8) {
-            const rot = Math.random() * 15 - 7.5;
-            const shift = Math.random() * 4 - 2;
-            digitEl.style.transform = `rotate(${rot}deg) translateX(${shift}px) scale(1.1)`;
-        } else {
-            digitEl.style.transform = "rotate(0deg) translateX(0px) scale(1)";
-        }
+// ----------------------
+// 3D Projection & Rotation
+// ----------------------
+function rotateX([x,y,z], angle) { const cos=Math.cos(angle), sin=Math.sin(angle); return [x, y*cos - z*sin, y*sin + z*cos]; }
+function rotateY([x,y,z], angle) { const cos=Math.cos(angle), sin=Math.sin(angle); return [x*cos + z*sin, y, -x*sin + z*cos]; }
+function project([x,y,z]) { const scale=500; const cx=canvas.width/2, cy=canvas.height/2; return [cx + x*scale, cy - y*scale]; }
+
+// ----------------------
+// Draw Tetrahedron
+// ----------------------
+function drawTetra(tetra){
+    const transformed = tetra.vertices.map(v => rotateY(rotateX(v, rotX), rotY));
+    for(const [i,j] of tetra.edges){
+        const [x1,y1] = project(transformed[i]);
+        const [x2,y2] = j>=tetra.vertices.length? [project([0,0,0])[0], project([0,0,0])[1]] : project(transformed[j]);
+        ctx.strokeStyle = tetra.source==="Human"?"#0f0":tetra.source==="AI"?"#0af":"#fa0";
+        ctx.lineWidth = 2 + (transformed[i][2]+transformed[j>=tetra.vertices.length?0:j][2])*2; // pseudo depth
+        ctx.beginPath();
+        ctx.moveTo(x1,y1);
+        ctx.lineTo(x2,y2);
+        ctx.stroke();
     }
-
-    requestAnimationFrame(glitchTick);
 }
 
-glitchTick();
+// ----------------------
+// Animation Loop
+// ----------------------
+function draw(){
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    for(const t of poly) drawTetra(t);
+    rotY += spinSpeed;
+    requestAnimationFrame(draw);
+}
+draw();
+
+// ----------------------
+// Drag Controls
+// ----------------------
+canvas.addEventListener('mousedown', e => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
+canvas.addEventListener('mousemove', e => {
+    if(isDragging){
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        rotY += dx*0.01; rotX += dy*0.01;
+        lastX=e.clientX; lastY=e.clientY;
+    }
+});
+canvas.addEventListener('mouseup', e => { isDragging=false; });
+canvas.addEventListener('touchstart', e => { isDragging=true; lastX=e.touches[0].clientX; lastY=e.touches[0].clientY; });
+canvas.addEventListener('touchmove', e => {
+    if(isDragging){
+        const dx = e.touches[0].clientX - lastX;
+        const dy = e.touches[0].clientY - lastY;
+        rotY += dx*0.01; rotX += dy*0.01;
+        lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+    }
+});
+canvas.addEventListener('touchend', e => { isDragging=false; });
+
+// ----------------------
+// Responsive Canvas
+// ----------------------
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
 </script>
+
+</body>
+</html>
