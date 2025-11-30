@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Polyhydra Vortex Puzzle Game</title>
+<title>Polyhydra Vortex Star Puzzle</title>
 <style>
 body, html {
     margin:0; padding:0;
@@ -28,15 +28,15 @@ canvas { display:block; }
     max-width: 90%;
 }
 #status {
-    font-size:clamp(24px,5vw,48px);
+    font-size:36px;
     margin-bottom:20px;
     text-align:center;
     color:#0f0;
     text-shadow:2px 2px 10px #000;
 }
 button {
-    font-size:clamp(18px,3vw,32px);
-    padding:10px 30px;
+    font-size:28px;
+    padding:12px 30px;
     margin:5px;
     border:none;
     border-radius:15px;
@@ -50,29 +50,46 @@ button:hover { background: linear-gradient(#555,#222); }
 
 #leaderboard {
     margin-top:20px;
-    font-size:clamp(18px,2vw,28px);
+    font-size:24px;
     color:#ff0;
     text-align:center;
     display:none;
 }
 input[type="text"]{
-    font-size:clamp(16px,2vw,24px);
+    font-size:20px;
     padding:5px 10px;
     border-radius:10px;
     border:none;
     margin-top:10px;
 }
+
+/* --- Responsive UI --- */
+@media (max-width:600px){
+    #status { font-size:24px; }
+    button { font-size:18px; padding:8px 20px; }
+    #leaderboard { font-size:18px; }
+}
+@media (min-width:601px) and (max-width:1200px){
+    #status { font-size:32px; }
+    button { font-size:24px; padding:10px 25px; }
+    #leaderboard { font-size:20px; }
+}
+@media (min-width:1201px){
+    #status { font-size:40px; }
+    button { font-size:28px; padding:12px 30px; }
+    #leaderboard { font-size:24px; }
+}
 </style>
 </head>
 <body>
 <div id="ui">
-    <div id="status">Select Begin Tetrahedron</div>
+    <div id="status">Select Begin Star</div>
     <div>
         <button id="resetBtn">Restart Game</button>
         <button id="toggleLeaderboardBtn">Show Leaderboard</button>
     </div>
     <div id="leaderboard">
-        <div>🏆 Leaderboard 🏆</div>
+        <div>🌟 Leaderboard 🌟</div>
         <div id="entries">No submissions yet</div>
         <input type="text" id="playerName" placeholder="Your Name"/>
         <button id="submitBtn">Submit Score</button>
@@ -85,33 +102,32 @@ const ctx=canvas.getContext('2d');
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 
 // ----------------------
-// Polyhydra Vortex Setup
+// Star Vortex Setup
 // ----------------------
-let tetraList=[];
+let starList=[];
 let rotX=0, rotY=0;
-const totalTetra=10;
+const totalStars=10;
 const radius=0.5, heightStep=0.3;
 
 // Puzzle state
-let beginTetra=null;
-let endTetra=null;
-let currentTetra=null;
+let beginStar=null;
+let endStar=null;
+let currentStar=null;
 let visited=[];
 let moveCount=0;
 
 // Leaderboard (persistent)
 let leaderboard=JSON.parse(localStorage.getItem('vortexLeaderboard')) || [];
 
-// Create vortex tetrahedra
-for(let i=0;i<totalTetra;i++){
+// Create star vortex
+for(let i=0;i<totalStars;i++){
     let angle=i*(Math.PI/4);
     let z=i*heightStep;
-    tetraList.push({
+    starList.push({
         id:i,
         x: radius*Math.cos(angle),
         y: radius*Math.sin(angle),
         z: z,
-        source: i%2===0?"Human":"AI",
         edges:[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]],
         vertices:[
             [0,0,0.1],
@@ -120,13 +136,14 @@ for(let i=0;i<totalTetra;i++){
             [-0.05,-0.05,-0.05]
         ],
         neighbors:[],
+        type:i%2===0?"Human":"AI"
     });
 }
 
-// Connect tetra sequentially
-for(let i=0;i<totalTetra-1;i++){
-    tetraList[i].neighbors.push(tetraList[i+1].id);
-    tetraList[i+1].neighbors.push(tetraList[i].id);
+// Connect stars sequentially
+for(let i=0;i<totalStars-1;i++){
+    starList[i].neighbors.push(starList[i+1].id);
+    starList[i+1].neighbors.push(starList[i].id);
 }
 
 // ----------------------
@@ -136,18 +153,19 @@ function rotateXVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); r
 function rotateYVec([x,y,z],angle){ const c=Math.cos(angle),s=Math.sin(angle); return [x*c + z*s, y, -x*s + z*c]; }
 function project([x,y,z]){ const scale=500; return [canvas.width/2 + x*scale, canvas.height/2 - y*scale]; }
 
-// Draw tetra with highlights
-function drawTetra(t){
-    const transformed=t.vertices.map(v=>{
-        let vx=v[0]+t.x, vy=v[1]+t.y, vz=v[2]+t.z;
+// Draw star as a tetra-like star shape
+function drawStar(s){
+    const transformed=s.vertices.map(v=>{
+        let vx=v[0]+s.x, vy=v[1]+s.y, vz=v[2]+s.z;
         return rotateYVec(rotateXVec([vx,vy,vz], rotX), rotY);
     });
     let color="#555";
-    if(t===beginTetra) color="#0f0";
-    else if(t===endTetra) color="#f0f";
-    else if(visited.includes(t.id)) color="#ff0";
-    else color=t.source==="Human"?"#0a0":"#00a";
-    for(const [i,j] of t.edges){
+    if(s===beginStar) color="#0f0";
+    else if(s===endStar) color="#f0f";
+    else if(visited.includes(s.id)) color="#ff0";
+    else color=s.type==="Human"?"#0a0":"#00a";
+
+    for(const [i,j] of s.edges){
         const [x1,y1]=project(transformed[i]);
         const [x2,y2]=project(transformed[j]);
         ctx.strokeStyle=color;
@@ -157,14 +175,19 @@ function drawTetra(t){
         ctx.lineTo(x2,y2);
         ctx.stroke();
     }
+    // Draw star symbol
+    const [cx,cy]=project([s.x,s.y,s.z]);
+    ctx.fillStyle=color;
+    ctx.font="24px Arial Black";
+    ctx.fillText("★", cx-12, cy+8);
 }
 
-// Pick tetrahedron under pointer
-function pickTetra(x,y){
-    for(const t of tetraList){
-        const tx=project(rotateYVec(rotateXVec([t.x,t.y,t.z], rotX), rotY));
-        const dx=x-tx[0], dy=y-tx[1];
-        if(Math.sqrt(dx*dx+dy*dy)<30) return t;
+// Pick star under pointer
+function pickStar(x,y){
+    for(const s of starList){
+        const [sx,sy]=project(rotateYVec(rotateXVec([s.x,s.y,s.z], rotX), rotY));
+        const dx=x-sx, dy=y-sy;
+        if(Math.sqrt(dx*dx+dy*dy)<30) return s;
     }
     return null;
 }
@@ -173,7 +196,7 @@ function pickTetra(x,y){
 function draw(){
     ctx.fillStyle="#111";
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    tetraList.forEach(t=>drawTetra(t));
+    starList.forEach(s=>drawStar(s));
     requestAnimationFrame(draw);
 }
 draw();
@@ -194,20 +217,20 @@ canvas.addEventListener('touchend', e=>isDragging=false);
 // Puzzle Click
 // ----------------------
 canvas.addEventListener('click', e=>{
-    const t=pickTetra(e.clientX,e.clientY);
-    if(!t) return;
-    if(!beginTetra){
-        beginTetra=t;
-        currentTetra=t;
-        endTetra=tetraList[tetraList.length-1];
-        visited.push(t.id);
+    const s=pickStar(e.clientX,e.clientY);
+    if(!s) return;
+    if(!beginStar){
+        beginStar=s;
+        currentStar=s;
+        endStar=starList[starList.length-1];
+        visited.push(s.id);
         moveCount=0;
         document.getElementById('status').innerText="Navigate to Magenta End!";
-    } else if(currentTetra.neighbors.includes(t.id) && !visited.includes(t.id)){
-        currentTetra=t;
-        visited.push(t.id);
+    } else if(currentStar.neighbors.includes(s.id) && !visited.includes(s.id)){
+        currentStar=s;
+        visited.push(s.id);
         moveCount++;
-        if(currentTetra===endTetra){
+        if(currentStar===endStar){
             document.getElementById('status').innerText=`🎉 Puzzle Complete in ${moveCount} moves! Enter Name to Submit`;
         }
     }
@@ -217,12 +240,12 @@ canvas.addEventListener('click', e=>{
 // Reset
 // ----------------------
 function resetPuzzle(){
-    beginTetra=null;
-    endTetra=null;
-    currentTetra=null;
+    beginStar=null;
+    endStar=null;
+    currentStar=null;
     visited=[];
     moveCount=0;
-    document.getElementById('status').innerText="Select Begin Tetrahedron";
+    document.getElementById('status').innerText="Select Begin Star";
 }
 
 // ----------------------
@@ -236,7 +259,7 @@ updateLeaderboardUI();
 
 document.getElementById('submitBtn').addEventListener('click', ()=>{
     const name=document.getElementById('playerName').value || "Anonymous";
-    if(currentTetra!==endTetra) return;
+    if(currentStar!==endStar) return;
     leaderboard.push({name:name,moves:moveCount});
     leaderboard.sort((a,b)=>a.moves-b.moves);
     localStorage.setItem('vortexLeaderboard', JSON.stringify(leaderboard));
