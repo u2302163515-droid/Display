@@ -65,7 +65,7 @@ canvas {
     text-shadow: 0 0 14px rgba(0, 234, 255, 0.9);
 }
 
-/* Primary buttons (Restart + general UI) */
+/* Primary buttons */
 button {
     font-size: 18px;
     padding: 12px 26px;
@@ -203,22 +203,28 @@ button:active {
     #status { font-size: 34px; }
     button { font-size: 18px; padding: 12px 26px; }
 }
-    .logo {
+
+    .logo-wrap {
     position: absolute;
-    top: 25px;
-    left: 25px;
+    top: 18px;
+    left: 22px;
     z-index: 20;
-    pointer-events: none;
+    display: flex;
+    align-items: center;
+    pointer-events: none; /* logo doesn't block clicks/drags */
 }
 
-.logo img {
-    height: 90px;
-    filter: drop-shadow(0 0 12px rgba(0,255,150,0.7));
+.logo-wrap img {
+    height: 70px;
+    filter:
+        drop-shadow(0 0 10px rgba(0, 255, 138, 0.8))
+        drop-shadow(0 0 24px rgba(0, 255, 138, 0.45));
 }
 
-@media(max-width: 600px) {
-    .logo img {
-        height: 60px;
+/* Smaller on mobile */
+@media (max-width: 600px) {
+    .logo-wrap img {
+        height: 52px;
     }
 }
 
@@ -226,8 +232,8 @@ button:active {
 </head>
 
 <body>
-    <div class="logo">
-  <img src="skins-game-text.svg" alt="Skins Game Logo">
+    <div class="logo-wrap">
+  <img src="skins-game-logo.svg" alt="Skins Game logo">
 </div>
 
 <div id="ui">
@@ -280,10 +286,18 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Zoom configuration (start at most zoomed out)
+const MIN_SCALE = 140;
+const MAX_SCALE = 2000;
+let scaleFactor = MIN_SCALE;   // most zoomed-out to start
+
+// Auto-rotate
+const AUTO_ROTATE_SPEED = 0.25; // degrees per second around Y
+let lastTime = 0;
+
 // Star Vortex Setup
 let starList = [];
 let rotX = 0, rotY = 0;
-let scaleFactor = 500; // zoom
 
 const totalStars = 10;
 const radius = 0.5;
@@ -388,6 +402,56 @@ function drawBgStars() {
     ctx.restore();
 }
 
+// ================================
+// Particle system
+// ================================
+const particles = [];
+
+function spawnBurst(x, y, color, power = 1) {
+    const count = 20 + Math.floor(20 * power);
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (60 + Math.random() * 120) * power;
+        particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 0.6 + Math.random() * 0.5,
+            age: 0,
+            size: 2 + Math.random() * 2,
+            color
+        });
+    }
+}
+
+function updateAndDrawParticles(dt) {
+    if (!particles.length) return;
+
+    ctx.save();
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.age += dt;
+        if (p.age >= p.life) {
+            particles.splice(i, 1);
+            continue;
+        }
+        const t = p.age / p.life;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 40 * dt * 0.2; // tiny gravity-ish pull
+
+        const alpha = 1 - t;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * (1 - t * 0.4), 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+}
+
 // Draw a single star (3D edges + glowing icon)
 function drawStar(s, t) {
     const transformed = s.vertices.map(v => {
@@ -482,13 +546,19 @@ function pickStar(x, y) {
     return null;
 }
 
-// Animation loop
+// Animation loop with auto-rotate + particles
 function drawFrame(timestamp) {
     const t = timestamp * 0.001;
+    const dt = lastTime ? (timestamp - lastTime) / 1000 : 0;
+    lastTime = timestamp;
+
+    // auto-rotate slowly around Y axis (degrees → radians)
+    const autoDelta = (AUTO_ROTATE_SPEED * Math.PI / 180) * dt;
+    rotY += autoDelta;
 
     drawBgStars();
 
-    // Draw stars (simple painter's order: back to front by z)
+    // Draw stars from back to front
     const sorted = [...starList].sort((a, b) => {
         const ra = rotateYVec(rotateXVec([a.x, a.y, a.z], rotX), rotY)[2];
         const rb = rotateYVec(rotateXVec([b.x, b.y, b.z], rotX), rotY)[2];
@@ -499,8 +569,8 @@ function drawFrame(timestamp) {
         drawStar(s, t);
     }
 
-    // Overlay the visited path on top
     drawVisitedPath();
+    updateAndDrawParticles(dt);
 
     requestAnimationFrame(drawFrame);
 }
@@ -536,8 +606,8 @@ canvas.addEventListener('mouseleave', () => { isDragging = false; });
 canvas.addEventListener('wheel', e => {
     e.preventDefault();
     scaleFactor *= e.deltaY < 0 ? 1.1 : 0.9;
-    if (scaleFactor < 100) scaleFactor = 100;
-    if (scaleFactor > 2000) scaleFactor = 2000;
+    if (scaleFactor < MIN_SCALE) scaleFactor = MIN_SCALE;
+    if (scaleFactor > MAX_SCALE) scaleFactor = MAX_SCALE;
 });
 
 // Touch (single = rotate, double = pinch zoom)
@@ -574,8 +644,8 @@ canvas.addEventListener('touchmove', e => {
         if (lastDistance != null) {
             const zoom = distance / lastDistance;
             scaleFactor *= zoom;
-            if (scaleFactor < 100) scaleFactor = 100;
-            if (scaleFactor > 2000) scaleFactor = 2000;
+            if (scaleFactor < MIN_SCALE) scaleFactor = MIN_SCALE;
+            if (scaleFactor > MAX_SCALE) scaleFactor = MAX_SCALE;
         }
         lastDistance = distance;
     }
@@ -586,19 +656,22 @@ canvas.addEventListener('touchend', e => {
         isDragging = false;
         lastDistance = null;
     } else if (e.touches.length === 1) {
-        // back to single-finger drag mode
         lastX = e.touches[0].clientX;
         lastY = e.touches[0].clientY;
         lastDistance = null;
     }
 });
 
-// Puzzle click/tap
+// Puzzle click/tap with particle bursts
 canvas.addEventListener('click', e => {
     const s = pickStar(e.clientX, e.clientY);
     if (!s) return;
 
     const statusEl = document.getElementById('status');
+
+    // Compute screen position for particle burst
+    const rotated = rotateYVec(rotateXVec([s.x, s.y, s.z], rotX), rotY);
+    const [sx, sy] = project(rotated);
 
     if (!beginStar) {
         beginStar = s;
@@ -607,12 +680,24 @@ canvas.addEventListener('click', e => {
         visited = [s.id];
         moveCount = 0;
         statusEl.innerText = "Navigate to Magenta End!";
+
+        // burst at begin star
+        spawnBurst(sx, sy, colors.begin, 1.1);
     } else if (currentStar.neighbors.includes(s.id) && !visited.includes(s.id)) {
         currentStar = s;
         visited.push(s.id);
         moveCount++;
+
+        // normal move burst
+        let burstColor = colors[s.type];
+        if (visited.includes(s.id)) burstColor = colors.visited;
+        spawnBurst(sx, sy, burstColor, 0.8);
+
         if (currentStar === endStar) {
             statusEl.innerText = `🎉 Puzzle complete in ${moveCount} moves!`;
+
+            // big celebratory burst at end star
+            spawnBurst(sx, sy, colors.end, 1.8);
         }
     }
 });
@@ -624,6 +709,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
     currentStar = null;
     visited = [];
     moveCount = 0;
+    scaleFactor = MIN_SCALE; // back to zoomed-out
     document.getElementById('status').innerText = "Select Begin Star";
 });
 
