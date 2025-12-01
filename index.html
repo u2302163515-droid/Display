@@ -203,10 +203,33 @@ button:active {
     #status { font-size: 34px; }
     button { font-size: 18px; padding: 12px 26px; }
 }
+    .logo {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.logo img {
+    height: 90px;
+    filter: drop-shadow(0 0 12px rgba(0,255,150,0.7));
+}
+
+@media(max-width: 600px) {
+    .logo img {
+        height: 60px;
+    }
+}
+
 </style>
 </head>
 
 <body>
+    <div class="logo">
+  <img src="skins-game-text.svg" alt="Skins Game Logo">
+</div>
+
 <div id="ui">
     <div id="status">Select Begin Star</div>
     <div>
