@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 650 200"
+     width="650" height="200">
+
+  <!-- Gradient fill for modern look -->
+  <defs>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3fff9a"/>
+      <stop offset="45%" stop-color="#00d46b"/>
+      <stop offset="100%" stop-color="#008c45"/>
+    </linearGradient>
+
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="0 0 0 0 0
+                0 1 0 0 1
+                0 0 0 0 0.6
+                0 0 0 0.9 0"/>
+    </filter>
+  </defs>
+
+  <!-- Glow behind text -->
+  <g opacity="0.5" filter="url(#softGlow)">
+    <text x="40" y="85"
+      font-family="Space Grotesk, sans-serif"
+      font-size="42"
+      font-weight="700">The</text>
+
+    <text x="40" y="145"
+      font-family="Space Grotesk, sans-serif"
+      font-size="100"
+      font-weight="700">Skins Game</text>
+  </g>
+
+  <!-- Main text -->
+  <g fill="url(#greenGrad)">
+    <text x="40" y="85"
+      font-family="Space Grotesk, sans-serif"
+      font-size="42"
+      font-weight="700">The</text>
+
+    <text x="40" y="145"
+      font-family="Space Grotesk, sans-serif"
+      font-size="100"
+      font-weight="700">Skins Game</text>
+  </g>
+
+</svg>
