@@ -279,8 +279,50 @@
       opacity: 0.22;
     }
 
+    .audio-btn {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: background var(--transition-fast), color var(--transition-fast),
+        box-shadow var(--transition-fast), transform 130ms ease-out;
+    }
+
+    .audio-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      opacity: 0.4;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .audio-btn.is-playing {
+      background: var(--fg);
+      color: var(--bg);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .audio-btn.is-playing .audio-dot {
+      opacity: 1;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
     .hero-variants {
-      margin-top: 4px;
+      margin-top: 14px;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -434,12 +476,8 @@
       width: 40%;
     }
 
-    /* HOLLOW CLASSES (fixes for the line) */
     .hollow-inner-main {
       fill: var(--bg);
-    }
-    .hollow-arc-main {
-      stroke: var(--bg);
     }
 
     .hollow-logo-outline circle.outer {
@@ -454,13 +492,6 @@
       stroke-width: 10;
     }
 
-    .hollow-logo-outline path.arc {
-      fill: none;
-      stroke: var(--fg);
-      stroke-width: 12;
-      stroke-linecap: round;
-    }
-
     @keyframes orbitGlow {
       0%,100% {
         opacity: 0.4;
@@ -469,6 +500,17 @@
       50% {
         opacity: 0.9;
         transform: translate(4px, 4px) scale(1.02);
+      }
+    }
+
+    @keyframes pulse {
+      0%,100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.0);
+      }
+      50% {
+        transform: scale(1.3);
+        box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.12);
       }
     }
 
@@ -515,23 +557,10 @@
 
         <div class="hero-main">
           <div class="logo-orbit">
-            <!-- CORE HOLLOW -->
+            <!-- CORE HOLLOW (no inner line) -->
             <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
               <circle cx="100" cy="100" r="90" fill="currentColor" />
-              <circle
-                class="hollow-inner-main"
-                cx="100"
-                cy="100"
-                r="58"
-              />
-              <!-- hollow line at ~220° -->
-              <path
-                class="hollow-arc-main"
-                d="M 60 148 A 70 70 0 0 1 150 110"
-                fill="none"
-                stroke-width="18"
-                stroke-linecap="round"
-              />
+              <circle class="hollow-inner-main" cx="100" cy="100" r="58" />
             </svg>
           </div>
 
@@ -550,6 +579,12 @@
               <span>Responsive Logo System</span>
               <span>Complex-plane Inspired</span>
             </div>
+
+            <!-- AUDIO CONTROL -->
+            <button id="audioToggle" class="audio-btn" type="button">
+              <span class="audio-dot"></span>
+              <span class="audio-label">Play audio</span>
+            </button>
 
             <div class="hero-variants">
               <div class="pill">
@@ -581,13 +616,6 @@
             <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
               <circle cx="100" cy="100" r="90" fill="currentColor" />
               <circle cx="100" cy="100" r="58" fill="#ffffff" />
-              <path
-                d="M 60 148 A 70 70 0 0 1 150 110"
-                fill="none"
-                stroke="#ffffff"
-                stroke-width="18"
-                stroke-linecap="round"
-              />
             </svg>
             <div class="tile-label">Primary</div>
           </div>
@@ -597,13 +625,6 @@
             <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
               <circle cx="100" cy="100" r="90" fill="#f9fafb" />
               <circle cx="100" cy="100" r="58" fill="#050509" />
-              <path
-                d="M 60 148 A 70 70 0 0 1 150 110"
-                fill="none"
-                stroke="#050509"
-                stroke-width="18"
-                stroke-linecap="round"
-              />
             </svg>
             <div class="tile-label">Dark</div>
           </div>
@@ -613,13 +634,6 @@
             <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
               <circle cx="100" cy="100" r="90" fill="#ffffff" />
               <circle cx="100" cy="100" r="58" fill="#c6a052" />
-              <path
-                d="M 60 148 A 70 70 0 0 1 150 110"
-                fill="none"
-                stroke="#c6a052"
-                stroke-width="18"
-                stroke-linecap="round"
-              />
             </svg>
             <div class="tile-label">Gold</div>
           </div>
@@ -629,13 +643,6 @@
             <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
               <circle cx="100" cy="100" r="90" fill="#f9fafb" />
               <circle cx="100" cy="100" r="58" fill="#071327" />
-              <path
-                d="M 60 148 A 70 70 0 0 1 150 110"
-                fill="none"
-                stroke="#071327"
-                stroke-width="18"
-                stroke-linecap="round"
-              />
             </svg>
             <div class="tile-label">Midnight</div>
           </div>
@@ -645,7 +652,6 @@
             <svg class="hollow-logo-outline" viewBox="0 0 200 200" aria-hidden="true">
               <circle class="outer" cx="100" cy="100" r="80" />
               <circle class="inner" cx="100" cy="100" r="52" />
-              <path class="arc" d="M 60 145 A 70 70 0 0 1 148 112" />
             </svg>
             <div class="tile-label">Outline</div>
           </div>
@@ -657,26 +663,12 @@
                 <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
                   <circle cx="100" cy="100" r="90" fill="currentColor" />
                   <circle cx="100" cy="100" r="58" fill="#f9fafb" />
-                  <path
-                    d="M 60 148 A 70 70 0 0 1 150 110"
-                    fill="none"
-                    stroke="#f9fafb"
-                    stroke-width="18"
-                    stroke-linecap="round"
-                  />
                 </svg>
               </div>
               <div class="card dark">
                 <svg class="hollow-logo" viewBox="0 0 200 200" aria-hidden="true">
                   <circle cx="100" cy="100" r="90" fill="#f9fafb" />
                   <circle cx="100" cy="100" r="58" fill="#111827" />
-                  <path
-                    d="M 60 148 A 70 70 0 0 1 150 110"
-                    fill="none"
-                    stroke="#111827"
-                    stroke-width="18"
-                    stroke-linecap="round"
-                  />
                 </svg>
               </div>
             </div>
@@ -688,9 +680,12 @@
 
     <footer>
       <span class="highlight">BRAND SYSTEM · <strong>The Hollow</strong></span>
-      <span>Hover tiles · Switch themes · Scroll to rotate the mark.</span>
+      <span>Hover tiles · Switch themes · Scroll + listen.</span>
     </footer>
   </div>
+
+  <!-- AUDIO FILE (put hollow-theme.mp3 next to this HTML file) -->
+  <audio id="hollow-audio" src="hollow-theme.mp3" preload="auto" loop></audio>
 
   <script>
     // THEME SWITCHER
@@ -711,7 +706,7 @@
 
     function updateRotation() {
       const scroll = window.scrollY || window.pageYOffset;
-      const rotation = (scroll * 0.2) % 360; // subtle
+      const rotation = (scroll * 0.2) % 360;
       logos.forEach((el) => {
         el.style.transform = `rotate(${rotation}deg)`;
       });
@@ -719,6 +714,29 @@
 
     updateRotation();
     window.addEventListener("scroll", updateRotation, { passive: true });
+
+    // AUDIO TOGGLE
+    const audio = document.getElementById("hollow-audio");
+    const audioBtn = document.getElementById("audioToggle");
+    const audioLabel = audioBtn.querySelector(".audio-label");
+
+    audioBtn.addEventListener("click", () => {
+      if (audio.paused) {
+        audio.play();
+      } else {
+        audio.pause();
+      }
+    });
+
+    audio.addEventListener("play", () => {
+      audioBtn.classList.add("is-playing");
+      audioLabel.textContent = "Pause audio";
+    });
+
+    audio.addEventListener("pause", () => {
+      audioBtn.classList.remove("is-playing");
+      audioLabel.textContent = "Play audio";
+    });
   </script>
 </body>
 </html>
