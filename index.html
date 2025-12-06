@@ -52,11 +52,12 @@
         /* Blinking terminal cursor */
         #terminal-cursor {
             position: fixed;
-            bottom: 20px;
+            top: 15px;
             left: 20px;
             font-size: 28px;
             color: #00FF00;
             animation: blink 0.65s infinite alternate;
+            z-index: 5;
         }
 
         @keyframes blink {
@@ -67,31 +68,81 @@
         /* Chat box styles */
         #chat-box {
             position: absolute;
-            bottom: 100px;
+            bottom: 110px;
             left: 10px;
-            width: 80%;
-            max-height: 300px;
+            right: 10px;
+            max-height: 320px;
             overflow-y: auto;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.85);
             padding: 10px;
             border-radius: 10px;
             border: 1px solid #00FF00;
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            z-index: 3;
         }
 
         #chat-box div {
             margin: 5px 0;
             font-size: 16px;
-            color: #00FF00;
         }
 
         .user-message {
             text-align: left;
+            color: #00FF00;
         }
 
         .bot-message {
             text-align: right;
-            color: #ffb200; /* Change bot color */
+            color: #ffb200;
+        }
+
+        /* Chat input area */
+        #chat-input-wrapper {
+            position: absolute;
+            bottom: 20px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 4;
+        }
+
+        #chat-input {
+            flex: 1;
+            background-color: #000;
+            color: #00FF00;
+            border: 1px solid #00FF00;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            font-family: "Courier New", monospace;
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.4);
+        }
+
+        #send-btn {
+            padding: 10px 18px;
+            background-color: #00FF00;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: "Courier New", monospace;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+        }
+
+        #send-btn:hover {
+            background-color: #bfff00;
+            box-shadow: 0 0 20px rgba(191, 255, 0, 0.9);
+            transform: translateY(-1px);
+        }
+
+        #send-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
         }
 
         /* Digital keyboard (visible only on mobile) */
@@ -100,7 +151,7 @@
             bottom: 0;
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(14, 1fr);
+            grid-template-columns: repeat(10, 1fr);
             gap: 5px;
             padding: 15px;
             background-color: #111;
@@ -111,8 +162,8 @@
         #keyboard button {
             background-color: #222;
             color: #00FF00;
-            font-size: 20px;
-            padding: 15px;
+            font-size: 18px;
+            padding: 10px;
             border: none;
             border-radius: 8px;
             box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
@@ -126,17 +177,29 @@
             box-shadow: 0 0 12px rgba(0, 255, 0, 0.7);
         }
 
-        /* Add glowing effect */
         #keyboard button:hover {
             background-color: #00FF00;
             color: black;
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.9);
         }
 
-        /* Show the keyboard only on mobile */
+        .enter {
+            grid-column: span 2;
+        }
+
+        /* Show keyboard only on mobile */
         @media (max-width: 768px) {
             #keyboard {
                 display: grid;
+            }
+
+            #chat-box {
+                bottom: 180px;
+                max-height: 260px;
+            }
+
+            #chat-input-wrapper {
+                bottom: 120px;
             }
         }
 
@@ -161,8 +224,16 @@
     <!-- Chat box -->
     <div id="chat-box"></div>
 
-    <!-- Hidden input for detecting Enter key -->
-    <input type="text" id="input" style="position: absolute; top: -9999px;" />
+    <!-- Chat input area -->
+    <div id="chat-input-wrapper">
+        <input
+            type="text"
+            id="chat-input"
+            placeholder="type a command and hit ENTER..."
+            autocomplete="off"
+        />
+        <button id="send-btn">SEND</button>
+    </div>
 
     <!-- Digital keyboard for mobile -->
     <div id="keyboard">
@@ -201,7 +272,8 @@
         const canvas = document.getElementById('donut');
         const ctx = canvas.getContext('2d');
         const chatBox = document.getElementById('chat-box');
-        const inputField = document.getElementById('input');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
         const keys = document.querySelectorAll('#keyboard button');
 
         // Set canvas to full screen width and height
@@ -210,20 +282,19 @@
             canvas.height = window.innerHeight;
         }
 
-        // Resize the canvas when the window is resized
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
         let A = 0, B = 0;
         const K1 = 5, K2 = 5;
         let isAnimating = false;
+        let introShown = true;
 
         // Draw the spinning donut
         function drawDonut() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-            ctx.fillStyle = "rgb(0,255,0)"; // Set the donut color
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "rgb(0,255,0)";
 
-            // Loop through points on the donut's surface
             for (let i = 0; i < Math.PI * 2; i += 0.07) {
                 for (let j = 0; j < Math.PI * 2; j += 0.02) {
 
@@ -234,22 +305,19 @@
                     let h = cosJ + 2;
                     let D = 1 / (sinI * h * sinA + sinJ * h * cosA + 5);
 
-                    // Calculate the x and y positions for the donut's surface
                     let x = (canvas.width / 2) + (30 * D * (cosI * h));
                     let y = (canvas.height / 2) + (15 * D * (sinI * h));
 
-                    // Draw the donut pixel at the calculated position
                     if (x >= 0 && y >= 0 && x < canvas.width && y < canvas.height) {
                         ctx.fillRect(x, y, 2, 2);
                     }
                 }
             }
 
-            A += 0.04; // Update the rotation angle
-            B += 0.02; // Update the rotation angle
+            A += 0.04;
+            B += 0.02;
         }
 
-        // Animation loop to continuously draw the donut
         function animate() {
             if (isAnimating) {
                 drawDonut();
@@ -257,62 +325,115 @@
             }
         }
 
-        // Start the animation when ENTER is pressed
-        document.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" && !isAnimating) {
-                isAnimating = true; // Enable animation
-                animate(); // Start animation loop
-            }
-        });
-
-        // Show the introductory message before ENTER is pressed
+        // Intro message on canvas
         function showIntro() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = "32px Courier New";
             ctx.fillStyle = "#00FF00";
-            ctx.fillText("Press ENTER to initiate sequence...", canvas.width / 4, canvas.height / 2);
+            ctx.textAlign = "center";
+            ctx.fillText("Press ENTER to initiate sequence...", canvas.width / 2, canvas.height / 2);
         }
 
-        // Show intro text until Enter is pressed
         showIntro();
 
-        // Handle keyboard button clicks (for mobile)
+        // Helper: add messages to chat
+        function addMessage(text, sender = 'user') {
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = (sender === 'user' ? `> ${text}` : text);
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Very simple "bot" logic, just for flavor
+        function botReply(userText) {
+            const normalized = userText.trim().toLowerCase();
+
+            let response;
+
+            if (normalized === 'help') {
+                response = 'BOT: available commands -> help, status, clear, donut, random.';
+            } else if (normalized === 'status') {
+                response = 'BOT: system online. spinning-donut-engine = STABLE. chat-link = ACTIVE.';
+            } else if (normalized === 'clear') {
+                chatBox.innerHTML = '';
+                response = 'BOT: console cleared.';
+            } else if (normalized === 'donut') {
+                response = 'BOT: donut-engine already engaged. enjoy the spin.';
+            } else if (normalized === 'random') {
+                const codes = [
+                    'BOT: injecting chaos... pseudo-random seed accepted.',
+                    'BOT: 01100110 01110101 01101110 (translated: fun).',
+                    'BOT: entropy level rising. proceed with caution.'
+                ];
+                response = codes[Math.floor(Math.random() * codes.length)];
+            } else if (!normalized) {
+                response = 'BOT: awaiting valid input...';
+            } else {
+                response = `BOT: command "${userText}" acknowledged. processing in background...`;
+            }
+
+            addMessage(response, 'bot');
+        }
+
+        // Handle user sending a message
+        function handleUserMessage() {
+            const message = chatInput.value;
+
+            if (message.trim() !== '') {
+                addMessage(message, 'user');
+                botReply(message);
+            }
+
+            chatInput.value = '';
+
+            if (!isAnimating) {
+                isAnimating = true;
+                introShown = false;
+                animate();
+            }
+        }
+
+        // Desktop: ENTER inside chat input sends message
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleUserMessage();
+            }
+        });
+
+        // Desktop: SEND button
+        sendBtn.addEventListener('click', () => {
+            handleUserMessage();
+        });
+
+        // Global ENTER triggers animation if intro is visible and input empty
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && introShown && !isAnimating && !chatInput.value.trim()) {
+                isAnimating = true;
+                introShown = false;
+                animate();
+            }
+        });
+
+        // Mobile digital keyboard
         keys.forEach(button => {
             button.addEventListener('click', () => {
-                if (button.textContent === 'ENTER') {
-                    inputField.value = ''; // Reset the input field
-                    inputField.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+                const key = button.textContent;
+
+                if (key === 'ENTER') {
+                    handleUserMessage();
                 } else {
-                    inputField.value += button.textContent; // Append character to the input field
+                    chatInput.value += key;
+                    chatInput.focus();
                 }
             });
         });
 
-        // Trigger ENTER key event when mobile keyboard ENTER is clicked
-        inputField.addEventListener('keydown', (e) => {
-            if (e.key === "Enter" && !isAnimating) {
-                // Simulate chat
-                const message = inputField.value;
-                if (message.trim() !== '') {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.textContent = `User: ${message}`;
-                    messageDiv.classList.add('user-message');
-                    chatBox.appendChild(messageDiv);
-
-                    // Bot response (simulated)
-                    const botMessageDiv = document.createElement('div');
-                    botMessageDiv.textContent = `Bot: Received your message "${message}"`;
-                    botMessageDiv.classList.add('bot-message');
-                    chatBox.appendChild(botMessageDiv);
-                }
-
-                inputField.value = ''; // Clear input field
-                isAnimating = true; // Start animation if ENTER is pressed
-                animate();
-            }
-        });
+        // Initial boot message inside chat box
+        addMessage('booting hacker chat environment...', 'bot');
+        addMessage('type "help" for commands.', 'bot');
     </script>
 </body>
 </html>
-  
-          
+            
