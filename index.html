@@ -11,8 +11,8 @@
         <translation><img src="skins-game-text.svg" alt="The Skins Game"></translation>
     </message>
     </context>
-</TS>
--->
+</TS> -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,17 +77,26 @@
         const canvas = document.getElementById('donut');
         const ctx = canvas.getContext('2d');
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Set canvas to full screen width and height
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        // Resize the canvas when the window is resized
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
         let A = 0, B = 0;
         const K1 = 5, K2 = 5;
         let isAnimating = false;
 
+        // Draw the spinning donut
         function drawDonut() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "rgb(0,255,0)";
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+            ctx.fillStyle = "rgb(0,255,0)"; // Set the donut color
 
+            // Loop through points on the donut's surface
             for (let i = 0; i < Math.PI * 2; i += 0.07) {
                 for (let j = 0; j < Math.PI * 2; j += 0.02) {
 
@@ -98,19 +107,22 @@
                     let h = cosJ + 2;
                     let D = 1 / (sinI * h * sinA + sinJ * h * cosA + 5);
 
+                    // Calculate the x and y positions for the donut's surface
                     let x = (canvas.width / 2) + (30 * D * (cosI * h));
                     let y = (canvas.height / 2) + (15 * D * (sinI * h));
 
+                    // Draw the donut pixel at the calculated position
                     if (x >= 0 && y >= 0 && x < canvas.width && y < canvas.height) {
                         ctx.fillRect(x, y, 2, 2);
                     }
                 }
             }
 
-            A += 0.04;
-            B += 0.02;
+            A += 0.04; // Update the rotation angle
+            B += 0.02; // Update the rotation angle
         }
 
+        // Animation loop to continuously draw the donut
         function animate() {
             if (isAnimating) {
                 drawDonut();
@@ -118,21 +130,23 @@
             }
         }
 
-        // PRESS ENTER TO START
+        // Start the animation when ENTER is pressed
         document.addEventListener('keydown', (e) => {
             if (e.key === "Enter" && !isAnimating) {
-                isAnimating = true;
-                animate();
+                isAnimating = true; // Enable animation
+                animate(); // Start animation loop
             }
         });
 
-        // Intro splash
+        // Show the introductory message before ENTER is pressed
         function showIntro() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = "32px Courier New";
             ctx.fillStyle = "#00FF00";
             ctx.fillText("Press ENTER to initiate sequence...", canvas.width / 4, canvas.height / 2);
         }
+
+        // Show intro text until Enter is pressed
         showIntro();
     </script>
 </body>
