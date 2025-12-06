@@ -13,7 +13,7 @@
     </context>
 </TS> -->
 
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -45,7 +45,7 @@
 
         canvas {
             display: block;
-            border: 1px solid #00FF00;
+            border: none;
             box-shadow: 0 0 30px rgba(0, 255, 0, 0.4);
         }
 
@@ -100,28 +100,37 @@
             bottom: 0;
             width: 100%;
             display: grid;
-            grid-template-columns: repeat(10, 1fr);
+            grid-template-columns: repeat(14, 1fr);
             gap: 5px;
-            padding: 10px;
+            padding: 15px;
             background-color: #111;
-            border-top: 1px solid #00FF00;
             z-index: 10;
             display: none;
         }
 
         #keyboard button {
-            background-color: #333;
+            background-color: #222;
             color: #00FF00;
-            font-size: 24px;
+            font-size: 20px;
             padding: 15px;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+            transition: all 0.1s ease-in-out;
             cursor: pointer;
         }
 
         #keyboard button:active {
             background-color: #00FF00;
             color: black;
+            box-shadow: 0 0 12px rgba(0, 255, 0, 0.7);
+        }
+
+        /* Add glowing effect */
+        #keyboard button:hover {
+            background-color: #00FF00;
+            color: black;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.9);
         }
 
         /* Show the keyboard only on mobile */
@@ -305,4 +314,5 @@
     </script>
 </body>
 </html>
-      
+  
+          
