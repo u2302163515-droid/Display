@@ -346,35 +346,35 @@
         }
 
         // Very simple "bot" logic, just for flavor
-        function botReply(userText) {
-            const normalized = userText.trim().toLowerCase();
+        // Helper: add messages to chat (you already have this)
+function addMessage(text, sender = 'user') {
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = (sender === 'user' ? `> ${text}` : text);
+    messageDiv.classList.add(sender === 'user' ? 'user-message' : 'bot-message');
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
 
-            let response;
+// NEW: real bot that calls the backend
+async function botReply(userText) {
+    try {
+        const res = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ message: userText })
+        });
 
-            if (normalized === 'help') {
-                response = 'BOT: available commands -> help, status, clear, donut, random.';
-            } else if (normalized === 'status') {
-                response = 'BOT: system online. spinning-donut-engine = STABLE. chat-link = ACTIVE.';
-            } else if (normalized === 'clear') {
-                chatBox.innerHTML = '';
-                response = 'BOT: console cleared.';
-            } else if (normalized === 'donut') {
-                response = 'BOT: donut-engine already engaged. enjoy the spin.';
-            } else if (normalized === 'random') {
-                const codes = [
-                    'BOT: injecting chaos... pseudo-random seed accepted.',
-                    'BOT: 01100110 01110101 01101110 (translated: fun).',
-                    'BOT: entropy level rising. proceed with caution.'
-                ];
-                response = codes[Math.floor(Math.random() * codes.length)];
-            } else if (!normalized) {
-                response = 'BOT: awaiting valid input...';
-            } else {
-                response = `BOT: command "${userText}" acknowledged. processing in background...`;
-            }
+        const data = await res.json();
 
-            addMessage(response, 'bot');
-        }
+        addMessage(data.reply || 'BOT: (no reply received)', 'bot');
+    } catch (err) {
+        console.error(err);
+        addMessage('BOT: error connecting to server.', 'bot');
+    }
+}
+
 
         // Handle user sending a message
         function handleUserMessage() {
